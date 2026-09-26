@@ -1,4 +1,5 @@
 #include "application.hpp"
+#include "math.hpp"
 
 #include <imgui.h>
 
@@ -434,17 +435,26 @@ void shutdown() {
 void update([[maybe_unused]] double time) {
 	ImGui::ShowDemoWindow();
 
-	// ===== ШАГ 5 =====
-	// Сдвиг на 0.5 по Z: без него передняя грань (z = -0.5) выходит за диапазон глубины [0, 1].
-	// GLSL хранит матрицу по столбцам, поэтому последняя строка массива — это столбец сдвига.
-	const float identity[4][4] = {
-		{ 1, 0, 0, 0 },
-		{ 0, 1, 0, 0 },
-		{ 0, 0, 1, 0 },
-		{ 0, 0, 0.5f, 1 },
-	};
+	auto& context = graphics::internal::context;
 
-	memcpy(vk_uniform_buffer_global_memory->matrix, identity, sizeof(identity));
+	// ===== МАТРИЦЫ, ШАГ 3.1: Model — куб медленно вращается =====
+	const float angle = float(time);
+	const math::Matrix4 model = math::Matrix4::rotationY(angle) *
+	                            math::Matrix4::rotationX(angle * 0.5f);
+
+	// ===== МАТРИЦЫ, ШАГ 3.2: View — отодвигаем куб от камеры на 3 =====
+	const math::Matrix4 view = math::Matrix4::translation(0, 0, 3);
+
+	// ===== МАТРИЦЫ, ШАГ 3.3: Projection — перспектива =====
+	const float aspect = float(context.swapchain_extent.width) /
+	                     float(context.swapchain_extent.height);
+	const float fov = 60.0f * 3.14159265f / 180.0f;
+	const math::Matrix4 projection = math::Matrix4::perspective(fov, aspect, 0.1f, 100.0f);
+
+	// ===== МАТРИЦЫ, ШАГ 3.4: перемножить и скопировать в uniform-буфер =====
+	const math::Matrix4 matrix = projection * view * model;
+
+	memcpy(vk_uniform_buffer_global_memory->matrix, matrix.elements, sizeof(matrix.elements));
 }
 
 void render(const graphics::internal::FrameData& fd) {

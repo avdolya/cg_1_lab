@@ -1,0 +1,118 @@
+#pragma once
+
+#include <cmath>
+
+namespace math {
+
+struct Matrix4 {
+	// GLSL хранит mat4 по столбцам: elements[столбец][строка].
+	// Поэтому матрицы ниже задаются через fromRows — по строкам, как на бумаге.
+	float elements[4][4];
+
+	static Matrix4 fromRows(const float (&rows)[4][4]) {
+		Matrix4 result;
+		for (int row = 0; row < 4; ++row) {
+			for (int column = 0; column < 4; ++column) {
+				result.elements[column][row] = rows[row][column];
+			}
+		}
+		return result;
+	}
+
+	static Matrix4 identity() {
+		return fromRows({
+			{ 1, 0, 0, 0 },
+			{ 0, 1, 0, 0 },
+			{ 0, 0, 1, 0 },
+			{ 0, 0, 0, 1 },
+		});
+	}
+
+	static Matrix4 translation(float x, float y, float z) {
+		return fromRows({
+			{ 1, 0, 0, x },
+			{ 0, 1, 0, y },
+			{ 0, 0, 1, z },
+			{ 0, 0, 0, 1 },
+		});
+	}
+
+	static Matrix4 scale(float x, float y, float z) {
+		return fromRows({
+			{ x, 0, 0, 0 },
+			{ 0, y, 0, 0 },
+			{ 0, 0, z, 0 },
+			{ 0, 0, 0, 1 },
+		});
+	}
+
+	static Matrix4 rotationX(float angle) {
+		const float c = std::cos(angle), s = std::sin(angle);
+		return fromRows({
+			{ 1, 0,  0, 0 },
+			{ 0, c, -s, 0 },
+			{ 0, s,  c, 0 },
+			{ 0, 0,  0, 1 },
+		});
+	}
+
+	static Matrix4 rotationY(float angle) {
+		const float c = std::cos(angle), s = std::sin(angle);
+		return fromRows({
+			{  c, 0, s, 0 },
+			{  0, 1, 0, 0 },
+			{ -s, 0, c, 0 },
+			{  0, 0, 0, 1 },
+		});
+	}
+
+	static Matrix4 rotationZ(float angle) {
+		const float c = std::cos(angle), s = std::sin(angle);
+		return fromRows({
+			{ c, -s, 0, 0 },
+			{ s,  c, 0, 0 },
+			{ 0,  0, 1, 0 },
+			{ 0,  0, 0, 1 },
+		});
+	}
+
+	// Лекция 1, слайд 29. fov — вертикальный угол обзора в радианах, aspect = ширина / высота.
+	static Matrix4 perspective(float fov, float aspect, float near, float far) {
+		const float t = std::tan(fov / 2);
+		return fromRows({
+			{ 1 / (aspect * t), 0,     0,                   0                          },
+			{ 0,                1 / t, 0,                   0                          },
+			{ 0,                0,     far / (far - near), -far * near / (far - near) },
+			{ 0,                0,     1,                   0                          },
+		});
+	}
+
+	// Лекция 1, слайд 28 (ортографическая часть) при r = -l, t = -b.
+	// height — половина видимой высоты сцены.
+	static Matrix4 orthographic(float height, float aspect, float near, float far) {
+		const float width = height * aspect;
+		return fromRows({
+			{ 1 / width, 0,          0,                  0                    },
+			{ 0,         1 / height, 0,                  0                    },
+			{ 0,         0,          1 / (far - near),  -near / (far - near) },
+			{ 0,         0,          0,                  1                    },
+		});
+	}
+
+	// (A * B)[строка][столбец] = сумма по k: A[строка][k] * B[k][столбец]
+	Matrix4 operator*(const Matrix4& other) const {
+		Matrix4 result;
+		for (int row = 0; row < 4; ++row) {
+			for (int column = 0; column < 4; ++column) {
+				float sum = 0;
+				for (int k = 0; k < 4; ++k) {
+					sum += elements[k][row] * other.elements[column][k];
+				}
+				result.elements[column][row] = sum;
+			}
+		}
+		return result;
+	}
+};
+
+} // namespace math
