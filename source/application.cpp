@@ -435,11 +435,13 @@ void update([[maybe_unused]] double time) {
 	ImGui::ShowDemoWindow();
 
 	// ===== ШАГ 5 =====
+	// Сдвиг на 0.5 по Z: без него передняя грань (z = -0.5) выходит за диапазон глубины [0, 1].
+	// GLSL хранит матрицу по столбцам, поэтому последняя строка массива — это столбец сдвига.
 	const float identity[4][4] = {
 		{ 1, 0, 0, 0 },
 		{ 0, 1, 0, 0 },
 		{ 0, 0, 1, 0 },
-		{ 0, 0, 0, 1 },
+		{ 0, 0, 0.5f, 1 },
 	};
 
 	memcpy(vk_uniform_buffer_global_memory->matrix, identity, sizeof(identity));
