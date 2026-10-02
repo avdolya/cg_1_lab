@@ -432,24 +432,102 @@ void shutdown() {
 	vmaDestroyBuffer(context.allocator, vk_vertex_buffer, vk_vertex_buffer_allocation);
 }
 
-void update([[maybe_unused]] double time) {
-	ImGui::ShowDemoWindow();
+// ===== ИНТЕРФЕЙС: всё, чем пользователь управляет через ImGui =====
+// static — значения сохраняются между кадрами.
+// Надписи на английском: стандартный шрифт ImGui не содержит кириллицы.
 
+constexpr float degrees_to_radians = 3.14159265f / 180.0f;
+
+enum ProjectionType : int {
+	PROJECTION_PERSPECTIVE = 0,
+	PROJECTION_ORTHOGRAPHIC = 1,
+};
+
+int projection_type = PROJECTION_PERSPECTIVE;
+float fov_degrees = 60.0f;          // для перспективы
+float ortho_height = 1.5f;          // для ортографии: половина видимой высоты
+
+float position[3] = { 0.0f, 0.0f, 0.0f };
+float rotation_degrees[3] = { 20.0f, 30.0f, 0.0f };
+float scale_xyz[3] = { 1.0f, 1.0f, 1.0f };
+
+bool auto_rotate = true;
+float auto_rotate_speed = 30.0f;    // градусов в секунду
+float auto_rotate_angle = 0.0f;     // накопленный угол автовращения, градусы
+
+double previous_time = 0.0;
+
+void drawInterface() {
+	ImGui::Begin("Cube");
+
+	// Доп. задание 1: переключение проекции
+	ImGui::SeparatorText("Projection");
+	ImGui::RadioButton("Perspective", &projection_type, PROJECTION_PERSPECTIVE);
+	ImGui::SameLine();
+	ImGui::RadioButton("Orthographic", &projection_type, PROJECTION_ORTHOGRAPHIC);
+
+	if (projection_type == PROJECTION_PERSPECTIVE) {
+		ImGui::SliderFloat("FOV", &fov_degrees, 20.0f, 120.0f, "%.0f deg");
+	} else {
+		ImGui::SliderFloat("View height", &ortho_height, 0.5f, 5.0f);
+	}
+
+	// Доп. задание 2: позиция, поворот и растяжение
+	ImGui::SeparatorText("Transform");
+	ImGui::SliderFloat3("Position", position, -2.0f, 2.0f);
+	ImGui::SliderFloat3("Rotation", rotation_degrees, -180.0f, 180.0f, "%.0f deg");
+	ImGui::SliderFloat3("Scale", scale_xyz, 0.1f, 3.0f);
+
+	ImGui::SeparatorText("Auto rotation");
+	ImGui::Checkbox("Enabled", &auto_rotate);
+	ImGui::SliderFloat("Speed", &auto_rotate_speed, -180.0f, 180.0f, "%.0f deg/s");
+
+	if (ImGui::Button("Reset")) {
+		projection_type = PROJECTION_PERSPECTIVE;
+		fov_degrees = 60.0f;
+		ortho_height = 1.5f;
+		position[0] = position[1] = position[2] = 0.0f;
+		rotation_degrees[0] = 20.0f;
+		rotation_degrees[1] = 30.0f;
+		rotation_degrees[2] = 0.0f;
+		scale_xyz[0] = scale_xyz[1] = scale_xyz[2] = 1.0f;
+		auto_rotate = true;
+		auto_rotate_speed = 30.0f;
+		auto_rotate_angle = 0.0f;
+	}
+
+	ImGui::End();
+}
+
+void update(double time) {
 	auto& context = graphics::internal::context;
 
-	// ===== МАТРИЦЫ, ШАГ 3.1: Model — куб медленно вращается =====
-	const float angle = float(time);
-	const math::Matrix4 model = math::Matrix4::rotationY(angle) *
-	                            math::Matrix4::rotationX(angle * 0.5f);
+	const float delta_time = float(time - previous_time);
+	previous_time = time;
+
+	drawInterface();
+
+	if (auto_rotate) {
+		auto_rotate_angle += auto_rotate_speed * delta_time;
+	}
+
+	// ===== МАТРИЦЫ, ШАГ 3.1: Model = Сдвиг × Поворот × Масштаб =====
+	const math::Matrix4 model =
+		math::Matrix4::translation(position[0], position[1], position[2]) *
+		math::Matrix4::rotationY((rotation_degrees[1] + auto_rotate_angle) * degrees_to_radians) *
+		math::Matrix4::rotationX(rotation_degrees[0] * degrees_to_radians) *
+		math::Matrix4::rotationZ(rotation_degrees[2] * degrees_to_radians) *
+		math::Matrix4::scale(scale_xyz[0], scale_xyz[1], scale_xyz[2]);
 
 	// ===== МАТРИЦЫ, ШАГ 3.2: View — отодвигаем куб от камеры на 3 =====
 	const math::Matrix4 view = math::Matrix4::translation(0, 0, 3);
 
-	// ===== МАТРИЦЫ, ШАГ 3.3: Projection — перспектива =====
+	// ===== МАТРИЦЫ, ШАГ 3.3: Projection — перспектива или ортография =====
 	const float aspect = float(context.swapchain_extent.width) /
 	                     float(context.swapchain_extent.height);
-	const float fov = 60.0f * 3.14159265f / 180.0f;
-	const math::Matrix4 projection = math::Matrix4::perspective(fov, aspect, 0.1f, 100.0f);
+	const math::Matrix4 projection = projection_type == PROJECTION_PERSPECTIVE
+		? math::Matrix4::perspective(fov_degrees * degrees_to_radians, aspect, 0.1f, 100.0f)
+		: math::Matrix4::orthographic(ortho_height, aspect, 0.1f, 100.0f);
 
 	// ===== МАТРИЦЫ, ШАГ 3.4: перемножить и скопировать в uniform-буфер =====
 	const math::Matrix4 matrix = projection * view * model;
