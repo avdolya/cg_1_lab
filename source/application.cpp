@@ -17,6 +17,7 @@ struct Vertex {
 
 struct GlobalUniforms {
 	float matrix[4][4];
+	float color[4];
 };
 
 VkBuffer vk_vertex_buffer;
@@ -65,16 +66,22 @@ VkShaderModule loadShaderModule(const char path[]) {
 bool initialize() {
 	auto& context = graphics::internal::context;
 
-	const Vertex vertices[] = {
-		{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f } },
-		{ { +0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-		{ { +0.5f, +0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f } },
-		{ { -0.5f, +0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
-		{ { -0.5f, -0.5f, +0.5f }, { 0.0f, 0.0f, 1.0f } },
-		{ { +0.5f, -0.5f, +0.5f }, { 1.0f, 0.0f, 1.0f } },
-		{ { +0.5f, +0.5f, +0.5f }, { 1.0f, 1.0f, 1.0f } },
-		{ { -0.5f, +0.5f, +0.5f }, { 0.0f, 1.0f, 1.0f } },
+	Vertex vertices[] = {
+		{ { -0.5f, -0.5f, -0.5f } },
+		{ { +0.5f, -0.5f, -0.5f } },
+		{ { +0.5f, +0.5f, -0.5f } },
+		{ { -0.5f, +0.5f, -0.5f } },
+		{ { -0.5f, -0.5f, +0.5f } },
+		{ { +0.5f, -0.5f, +0.5f } },
+		{ { +0.5f, +0.5f, +0.5f } },
+		{ { -0.5f, +0.5f, +0.5f } },
 	};
+
+	for (Vertex& vertex : vertices) {
+		for (int i = 0; i < 3; ++i) {
+			vertex.color[i] = vertex.position[i] + 0.5f;
+		}
+	}
 
 	const VkBufferCreateInfo vertex_buffer = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -423,6 +430,13 @@ bool auto_rotate = true;
 float auto_rotate_speed = 30.0f;
 float auto_rotate_angle = 0.0f;
 
+bool trajectory_enabled = false;
+float trajectory_speed = 1.0f;
+float trajectory_radius = 1.0f;
+float trajectory_time = 0.0f;
+
+float color[3] = { 1.0f, 1.0f, 1.0f };
+
 double previous_time = 0.0;
 
 void drawInterface() {
@@ -448,6 +462,14 @@ void drawInterface() {
 	ImGui::Checkbox("Enabled", &auto_rotate);
 	ImGui::SliderFloat("Speed", &auto_rotate_speed, -180.0f, 180.0f, "%.0f deg/s");
 
+	ImGui::SeparatorText("Trajectory");
+	ImGui::Checkbox("Play##trajectory", &trajectory_enabled);
+	ImGui::SliderFloat("Speed##trajectory", &trajectory_speed, 0.1f, 5.0f);
+	ImGui::SliderFloat("Radius", &trajectory_radius, 0.0f, 2.0f);
+
+	ImGui::SeparatorText("Color");
+	ImGui::ColorEdit3("Color", color);
+
 	if (ImGui::Button("Reset")) {
 		projection_type = PROJECTION_PERSPECTIVE;
 		fov_degrees = 60.0f;
@@ -460,6 +482,11 @@ void drawInterface() {
 		auto_rotate = true;
 		auto_rotate_speed = 30.0f;
 		auto_rotate_angle = 0.0f;
+		trajectory_enabled = false;
+		trajectory_speed = 1.0f;
+		trajectory_radius = 1.0f;
+		trajectory_time = 0.0f;
+		color[0] = color[1] = color[2] = 1.0f;
 	}
 
 	ImGui::End();
@@ -477,8 +504,17 @@ void update(double time) {
 		auto_rotate_angle += auto_rotate_speed * delta_time;
 	}
 
+	if (trajectory_enabled) {
+		trajectory_time += trajectory_speed * delta_time;
+	}
+
+	const float trajectory_x = trajectory_radius * std::sin(trajectory_time);
+	const float trajectory_y = trajectory_radius * std::sin(2.0f * trajectory_time) / 2.0f;
+
 	const math::Matrix4 model =
-		math::Matrix4::translation(position[0], position[1], position[2]) *
+		math::Matrix4::translation(position[0] + trajectory_x,
+		                           position[1] + trajectory_y,
+		                           position[2]) *
 		math::Matrix4::rotationY((rotation_degrees[1] + auto_rotate_angle) * degrees_to_radians) *
 		math::Matrix4::rotationX(rotation_degrees[0] * degrees_to_radians) *
 		math::Matrix4::rotationZ(rotation_degrees[2] * degrees_to_radians) *
@@ -495,6 +531,9 @@ void update(double time) {
 	const math::Matrix4 matrix = projection * view * model;
 
 	memcpy(vk_uniform_buffer_global_memory->matrix, matrix.elements, sizeof(matrix.elements));
+
+	const float color_rgba[4] = { color[0], color[1], color[2], 1.0f };
+	memcpy(vk_uniform_buffer_global_memory->color, color_rgba, sizeof(color_rgba));
 }
 
 void render(const graphics::internal::FrameData& fd) {

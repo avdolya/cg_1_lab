@@ -7,9 +7,10 @@ layout(location = 0) out vec3 out_color;
 
 layout(std140, set = 0, binding = 0) uniform GlobalUniforms {
 	mat4 matrix;
+	vec4 color;
 } global_uniforms;
 
 void main() {
 	gl_Position = global_uniforms.matrix * vec4(in_position, 1);
-	out_color = in_color;
+	out_color = in_color * global_uniforms.color.rgb;
 }
