@@ -5,8 +5,6 @@
 namespace math {
 
 struct Matrix4 {
-	// GLSL хранит mat4 по столбцам: elements[столбец][строка].
-	// Поэтому матрицы ниже задаются через fromRows — по строкам, как на бумаге.
 	float elements[4][4];
 
 	static Matrix4 fromRows(const float (&rows)[4][4]) {
@@ -76,7 +74,6 @@ struct Matrix4 {
 		});
 	}
 
-	// Лекция 1, слайд 29. fov — вертикальный угол обзора в радианах, aspect = ширина / высота.
 	static Matrix4 perspective(float fov, float aspect, float near, float far) {
 		const float t = std::tan(fov / 2);
 		return fromRows({
@@ -87,8 +84,6 @@ struct Matrix4 {
 		});
 	}
 
-	// Лекция 1, слайд 28 (ортографическая часть) при r = -l, t = -b.
-	// height — половина видимой высоты сцены.
 	static Matrix4 orthographic(float height, float aspect, float near, float far) {
 		const float width = height * aspect;
 		return fromRows({
@@ -99,7 +94,6 @@ struct Matrix4 {
 		});
 	}
 
-	// (A * B)[строка][столбец] = сумма по k: A[строка][k] * B[k][столбец]
 	Matrix4 operator*(const Matrix4& other) const {
 		Matrix4 result;
 		for (int row = 0; row < 4; ++row) {
@@ -115,4 +109,4 @@ struct Matrix4 {
 	}
 };
 
-} // namespace math
+}

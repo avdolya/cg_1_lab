@@ -10,8 +10,6 @@
 
 namespace application {
 
-// ===== ШАГ 0 =====
-
 struct Vertex {
 	float position[3];
 	float color[3];
@@ -67,16 +65,15 @@ VkShaderModule loadShaderModule(const char path[]) {
 bool initialize() {
 	auto& context = graphics::internal::context;
 
-	// ===== ШАГ 1.1 =====
 	const Vertex vertices[] = {
-		{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f } }, // 0
-		{ { +0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } }, // 1
-		{ { +0.5f, +0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f } }, // 2
-		{ { -0.5f, +0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } }, // 3
-		{ { -0.5f, -0.5f, +0.5f }, { 0.0f, 0.0f, 1.0f } }, // 4
-		{ { +0.5f, -0.5f, +0.5f }, { 1.0f, 0.0f, 1.0f } }, // 5
-		{ { +0.5f, +0.5f, +0.5f }, { 1.0f, 1.0f, 1.0f } }, // 6
-		{ { -0.5f, +0.5f, +0.5f }, { 0.0f, 1.0f, 1.0f } }, // 7
+		{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f } },
+		{ { +0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+		{ { +0.5f, +0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f } },
+		{ { -0.5f, +0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.5f, -0.5f, +0.5f }, { 0.0f, 0.0f, 1.0f } },
+		{ { +0.5f, -0.5f, +0.5f }, { 1.0f, 0.0f, 1.0f } },
+		{ { +0.5f, +0.5f, +0.5f }, { 1.0f, 1.0f, 1.0f } },
+		{ { -0.5f, +0.5f, +0.5f }, { 0.0f, 1.0f, 1.0f } },
 	};
 
 	const VkBufferCreateInfo vertex_buffer = {
@@ -86,7 +83,6 @@ bool initialize() {
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	};
 
-	// ===== ШАГ 1.2 =====
 	const VmaAllocationCreateInfo vertex_buffer_allocation = {
 		.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT |
 		         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
@@ -100,7 +96,6 @@ bool initialize() {
 		return false;
 	}
 
-	// ===== ШАГ 1.3 =====
 	if (vmaMapMemory(context.allocator, vk_vertex_buffer_allocation,
 	                 (void **)&vk_vertex_buffer_memory) != VK_SUCCESS) {
 		std::cerr << "Failed to map vertex buffer memory\n";
@@ -109,14 +104,13 @@ bool initialize() {
 
 	memcpy(vk_vertex_buffer_memory, vertices, sizeof(vertices));
 
-	// ===== ШАГ 1.4 =====
 	const uint32_t indices[] = {
-		0, 1, 2,   0, 2, 3, // передняя
-		5, 4, 7,   5, 7, 6, // задняя
-		4, 0, 3,   4, 3, 7, // левая
-		1, 5, 6,   1, 6, 2, // правая
-		1, 0, 4,   1, 4, 5, // верхняя
-		3, 2, 6,   3, 6, 7, // нижняя
+		0, 1, 2,   0, 2, 3,
+		5, 4, 7,   5, 7, 6,
+		4, 0, 3,   4, 3, 7,
+		1, 5, 6,   1, 6, 2,
+		1, 0, 4,   1, 4, 5,
+		3, 2, 6,   3, 6, 7,
 	};
 
 	const VkBufferCreateInfo index_buffer = {
@@ -147,7 +141,6 @@ bool initialize() {
 
 	memcpy(vk_index_buffer_memory, indices, sizeof(indices));
 
-	// ===== ШАГ 1.5 =====
 	const VkBufferCreateInfo global_uniform_buffer = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.size = (sizeof(GlobalUniforms) + 0xf) & ~0xf,
@@ -175,7 +168,6 @@ bool initialize() {
 		return false;
 	}
 
-	// ===== ШАГ 2.1 =====
 	const VkDescriptorSetLayoutBinding descriptor_set_bindings[] = {
 		{
 			.binding = 0,
@@ -185,7 +177,6 @@ bool initialize() {
 		},
 	};
 
-	// ===== ШАГ 2.2 =====
 	const VkDescriptorSetLayoutCreateInfo descriptor_set_layout = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.bindingCount = sizeof(descriptor_set_bindings) / sizeof(descriptor_set_bindings[0]),
@@ -198,7 +189,6 @@ bool initialize() {
 		return false;
 	}
 
-	// ===== ШАГ 2.3 =====
 	const VkPipelineLayoutCreateInfo pipeline_layout = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.setLayoutCount = 1,
@@ -211,7 +201,6 @@ bool initialize() {
 		return false;
 	}
 
-	// ===== ШАГ 2.4 =====
 	const VkDescriptorPoolSize descriptor_pool_sizes[] = {
 		{
 			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -219,7 +208,6 @@ bool initialize() {
 		},
 	};
 
-	// ===== ШАГ 2.5 =====
 	const VkDescriptorPoolCreateInfo descriptor_pool = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 		.maxSets = 1,
@@ -233,7 +221,6 @@ bool initialize() {
 		return false;
 	}
 
-	// ===== ШАГ 2.6 =====
 	const VkDescriptorSetAllocateInfo descriptor_set = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 		.descriptorPool = vk_descriptor_pool,
@@ -247,7 +234,6 @@ bool initialize() {
 		return false;
 	}
 
-	// ===== ШАГ 2.7 =====
 	const VkDescriptorBufferInfo global_uniform_buffer_descriptor = {
 		.buffer = vk_uniform_buffer_global,
 		.offset = 0,
@@ -268,11 +254,9 @@ bool initialize() {
 	vkUpdateDescriptorSets(context.device, sizeof(descriptor_writes) / sizeof(descriptor_writes[0]),
 	                       descriptor_writes, 0, nullptr);
 
-	// ===== ШАГ 3.1 =====
 	VkShaderModule vk_vertex_shader = loadShaderModule("shaders/cube.vert.spv");
 	VkShaderModule vk_fragment_shader = loadShaderModule("shaders/cube.frag.spv");
 
-	// ===== ШАГ 3.2 =====
 	VkPipelineShaderStageCreateInfo stage_infos[2];
 	stage_infos[0] = VkPipelineShaderStageCreateInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -287,7 +271,6 @@ bool initialize() {
 		.pName = "main",
 	};
 
-	// ===== ШАГ 3.3 =====
 	const VkVertexInputBindingDescription vertex_bindings[] = {
 		{
 			.binding = 0,
@@ -296,7 +279,6 @@ bool initialize() {
 		},
 	};
 
-	// ===== ШАГ 3.4 =====
 	const VkVertexInputAttributeDescription vertex_attributes[] = {
 		{
 			.location = 0,
@@ -312,7 +294,6 @@ bool initialize() {
 		},
 	};
 
-	// ===== ШАГ 3.5 =====
 	VkPipelineVertexInputStateCreateInfo input_state_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.vertexBindingDescriptionCount = 1,
@@ -321,20 +302,17 @@ bool initialize() {
 		.pVertexAttributeDescriptions = vertex_attributes,
 	};
 
-	// ===== ШАГ 3.6 =====
 	VkPipelineInputAssemblyStateCreateInfo assembly_state_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 	};
 
-	// ===== ШАГ 3.7 =====
 	VkPipelineViewportStateCreateInfo viewport_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
 		.viewportCount = 1,
 		.scissorCount = 1,
 	};
 
-	// ===== ШАГ 3.8 =====
 	VkPipelineRasterizationStateCreateInfo raster_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.polygonMode = VK_POLYGON_MODE_FILL,
@@ -348,7 +326,6 @@ bool initialize() {
 		.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
 	};
 
-	// ===== ШАГ 3.9 =====
 	VkPipelineDepthStencilStateCreateInfo depth_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 		.depthTestEnable = true,
@@ -356,7 +333,6 @@ bool initialize() {
 		.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
 	};
 
-	// ===== ШАГ 3.10 =====
 	VkPipelineColorBlendAttachmentState attachment_info{
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
 		                  VK_COLOR_COMPONENT_G_BIT |
@@ -370,7 +346,6 @@ bool initialize() {
 		.pAttachments = &attachment_info
 	};
 
-	// ===== ШАГ 3.11 =====
 	const VkDynamicState dynamic_states[] = {
 		VK_DYNAMIC_STATE_VIEWPORT,
 		VK_DYNAMIC_STATE_SCISSOR,
@@ -382,7 +357,6 @@ bool initialize() {
 		.pDynamicStates = dynamic_states,
 	};
 
-	// ===== ШАГ 3.12 =====
 	const VkGraphicsPipelineCreateInfo pipeline_info = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 		.stageCount = 2,
@@ -399,7 +373,6 @@ bool initialize() {
 		.renderPass = context.render_pass,
 	};
 
-	// ===== ШАГ 3.13 =====
 	if (vkCreateGraphicsPipelines(context.device, VK_NULL_HANDLE, 1, &pipeline_info,
 	                              nullptr, &vk_pipeline) != VK_SUCCESS) {
 		std::cerr << "Failed to create pipeline\n";
@@ -416,7 +389,6 @@ void shutdown() {
 	auto& context = graphics::internal::context;
 	vkQueueWaitIdle(context.graphics_queue);
 
-	// ===== ШАГ 6 =====
 	vkDestroyPipeline(context.device, vk_pipeline, nullptr);
 	vkDestroyPipelineLayout(context.device, vk_pipeline_layout, nullptr);
 	vkDestroyDescriptorPool(context.device, vk_descriptor_pool, nullptr);
@@ -432,10 +404,6 @@ void shutdown() {
 	vmaDestroyBuffer(context.allocator, vk_vertex_buffer, vk_vertex_buffer_allocation);
 }
 
-// ===== ИНТЕРФЕЙС: всё, чем пользователь управляет через ImGui =====
-// static — значения сохраняются между кадрами.
-// Надписи на английском: стандартный шрифт ImGui не содержит кириллицы.
-
 constexpr float degrees_to_radians = 3.14159265f / 180.0f;
 
 enum ProjectionType : int {
@@ -444,23 +412,22 @@ enum ProjectionType : int {
 };
 
 int projection_type = PROJECTION_PERSPECTIVE;
-float fov_degrees = 60.0f;          // для перспективы
-float ortho_height = 1.5f;          // для ортографии: половина видимой высоты
+float fov_degrees = 60.0f;
+float ortho_height = 1.5f;
 
 float position[3] = { 0.0f, 0.0f, 0.0f };
 float rotation_degrees[3] = { 20.0f, 30.0f, 0.0f };
 float scale_xyz[3] = { 1.0f, 1.0f, 1.0f };
 
 bool auto_rotate = true;
-float auto_rotate_speed = 30.0f;    // градусов в секунду
-float auto_rotate_angle = 0.0f;     // накопленный угол автовращения, градусы
+float auto_rotate_speed = 30.0f;
+float auto_rotate_angle = 0.0f;
 
 double previous_time = 0.0;
 
 void drawInterface() {
 	ImGui::Begin("Cube");
 
-	// Доп. задание 1: переключение проекции
 	ImGui::SeparatorText("Projection");
 	ImGui::RadioButton("Perspective", &projection_type, PROJECTION_PERSPECTIVE);
 	ImGui::SameLine();
@@ -472,7 +439,6 @@ void drawInterface() {
 		ImGui::SliderFloat("View height", &ortho_height, 0.5f, 5.0f);
 	}
 
-	// Доп. задание 2: позиция, поворот и растяжение
 	ImGui::SeparatorText("Transform");
 	ImGui::SliderFloat3("Position", position, -2.0f, 2.0f);
 	ImGui::SliderFloat3("Rotation", rotation_degrees, -180.0f, 180.0f, "%.0f deg");
@@ -511,7 +477,6 @@ void update(double time) {
 		auto_rotate_angle += auto_rotate_speed * delta_time;
 	}
 
-	// ===== МАТРИЦЫ, ШАГ 3.1: Model = Сдвиг × Поворот × Масштаб =====
 	const math::Matrix4 model =
 		math::Matrix4::translation(position[0], position[1], position[2]) *
 		math::Matrix4::rotationY((rotation_degrees[1] + auto_rotate_angle) * degrees_to_radians) *
@@ -519,17 +484,14 @@ void update(double time) {
 		math::Matrix4::rotationZ(rotation_degrees[2] * degrees_to_radians) *
 		math::Matrix4::scale(scale_xyz[0], scale_xyz[1], scale_xyz[2]);
 
-	// ===== МАТРИЦЫ, ШАГ 3.2: View — отодвигаем куб от камеры на 3 =====
 	const math::Matrix4 view = math::Matrix4::translation(0, 0, 3);
 
-	// ===== МАТРИЦЫ, ШАГ 3.3: Projection — перспектива или ортография =====
 	const float aspect = float(context.swapchain_extent.width) /
 	                     float(context.swapchain_extent.height);
 	const math::Matrix4 projection = projection_type == PROJECTION_PERSPECTIVE
 		? math::Matrix4::perspective(fov_degrees * degrees_to_radians, aspect, 0.1f, 100.0f)
 		: math::Matrix4::orthographic(ortho_height, aspect, 0.1f, 100.0f);
 
-	// ===== МАТРИЦЫ, ШАГ 3.4: перемножить и скопировать в uniform-буфер =====
 	const math::Matrix4 matrix = projection * view * model;
 
 	memcpy(vk_uniform_buffer_global_memory->matrix, matrix.elements, sizeof(matrix.elements));
@@ -563,7 +525,6 @@ void render(const graphics::internal::FrameData& fd) {
 
 	vkCmdBeginRenderPass(fd.command_buffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
 
-	// ===== ШАГ 4.1 =====
 	const VkViewport viewport = {
 		.x = 0, .y = 0,
 		.width = float(context.swapchain_extent.width),
@@ -576,7 +537,6 @@ void render(const graphics::internal::FrameData& fd) {
 	vkCmdSetViewport(fd.command_buffer, 0, 1, &viewport);
 	vkCmdSetScissor(fd.command_buffer, 0, 1, &scissor);
 
-	// ===== ШАГ 4.2 – 4.5 =====
 	const VkDeviceSize vertex_buffer_offset = 0;
 	vkCmdBindVertexBuffers(fd.command_buffer, 0, 1, &vk_vertex_buffer, &vertex_buffer_offset);
 	vkCmdBindIndexBuffer(fd.command_buffer, vk_index_buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -594,4 +554,4 @@ void render(const graphics::internal::FrameData& fd) {
 	vkEndCommandBuffer(fd.command_buffer);
 }
 
-} // namespace application
+}
